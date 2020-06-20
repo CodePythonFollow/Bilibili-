@@ -5,19 +5,20 @@ from concurrent.futures import ThreadPoolExecutor
 
 class Bili_spider():
     def __init__(self, bvid):
+        self.bvid = bvid
         self.headers = {
             'accept': "*/*",
             'accept-encoding': "gzip, deflate, br",
             'accept-language': "zh-CN,zh;q=0.9,en;q=0.8",
             'cookie': "bsource=seo_bing; _uuid=663371CB-5514-DE59-BA27-0BCDBB0A75CA07147infoc; buvid3=873BCEE9-964E-4E1C-B37D-701FCAC4D96D53947infoc; sid=bp1xvkam; DedeUserID=243649950; DedeUserID__ckMd5=365ebebca8eceac0; SESSDATA=ab8a1208%2C1606268513%2Cc37cc*51; bili_jct=16c27ec0f751d09649044021b03d2c57; CURRENT_FNVAL=16; rpdid=|(J|)|~Rlu)k0J'ulm|~uYll); PVID=3; bfe_id=fdfaf33a01b88dd4692ca80f00c2de7f",
             'origin': "https://www.bilibili.com",
-            'referer': "https://www.bilibili.com/video/BV1mz411B7UV?p=3",
+            'referer': f"https://www.bilibili.com/video/{self.bvid}",
             'sec-fetch-dest': "empty",
             'sec-fetch-mode': "cors",
             'sec-fetch-site': "same-site",
             'user-agent': "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.61 Safari/537.36",
         }
-        self.bvid = bvid
+        
 
     # 获取每个视频的id
     def get_cids(self):
@@ -29,13 +30,14 @@ class Bili_spider():
         response = requests.get(url, params=params)
         cids = response.json()['data']
         # print(cids)
-        for i in cids[-9:]:
+        for i in cids:
             cid = i["cid"]
             part = i["part"]
 
             # 启用线程池进行爬取   设置线程最大值
             executor = ThreadPoolExecutor(max_workers=5)
-            f = executor.submit(self.spider, cid, part)
+            executor.submit(self.spider, cid, part)
+            
 
     # 获取flv视频链接并保存   也可单独调用用来下载单个视频
     def spider(self, cid, part):
@@ -56,22 +58,21 @@ class Bili_spider():
         self.save(url, part)
 
     # 保存视频
-    @staticmethod
-    def save(url, part):
-        h = re.findall("http://(.+)com", url)
-        host = h[0] + "com"
+    def save(self, url, part):
+        h = re.findall("http://(.*?)/", url)
+        host = h[0]
         headers = {
-            'host': host,
-            'accept': "application/json, text/javascript, */*; q=0.01",
-            'accept-encoding': "gzip, deflate, br",
-            'accept-language': "zh-CN,zh;q=0.9,en;q=0.8",
-            'cookie': "bsource=seo_bing; _uuid=663371CB-5514-DE59-BA27-0BCDBB0A75CA07147infoc; buvid3=873BCEE9-964E-4E1C-B37D-701FCAC4D96D53947infoc; sid=bp1xvkam; DedeUserID=243649950; DedeUserID__ckMd5=365ebebca8eceac0; SESSDATA=ab8a1208%2C1606268513%2Cc37cc*51; bili_jct=16c27ec0f751d09649044021b03d2c57; CURRENT_FNVAL=16; rpdid=|(J|)|~Rlu)k0J'ulm|~uYll); PVID=3",
-            'origin': "https://www.bilibili.com",
-            'referer': "https://www.bilibili.com/video/BV1mz411B7UV?p=2",
-            'user-agent': "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.61 Safari/537.36",
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
+            'Accept-Encoding': 'gzip, deflate',
+            'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+            'Host': host,
+            'Proxy-Connection': 'keep-alive',
+            'Upgrade-Insecure-Requests': '1',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.13 Safari/537.36',
         }
-        response = requests.get(url, headers=headers, stream=True, verify=False)
-
+        
+        response = requests.get(url, headers=headers)
+ 
         print(response.status_code)
         with open(f'{part}.flv', 'wb') as fi:
             fi.write(response.content)
@@ -79,5 +80,5 @@ class Bili_spider():
 
 if __name__ == '__main__':
     # 此处传入Biv即可下载所有视频
-    bili = Bili_spider(bvid='BV1RE41187Yo')
+    bili = Bili_spider(bvid='BV1U4411U7Zc')
     bili.get_cids()
