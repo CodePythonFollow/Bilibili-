@@ -73,9 +73,11 @@ class Bili_spider():
         
         response = requests.get(url, headers=headers)
  
-        print(response.status_code)
-        with open(f'{part}.flv', 'wb') as fi:
-            fi.write(response.content)
+        if response.status_code < 300:
+            with open(f'{part}.flv', 'wb') as fi:
+                fi.write(response.content)
+            print(f"{part}保存完成")
+
 
 
 if __name__ == '__main__':
