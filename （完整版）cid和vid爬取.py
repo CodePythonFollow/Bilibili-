@@ -53,12 +53,11 @@ class Bili_spider():
 
         response = requests.get(url, params=params)
         url = response.json()['data']['durl'][0]['url']
-        size = response.json()['data']['durl'][0]['size'] / 1024 /1024
-        print('%s正在下载视频，大小为：% .2fM' % (part, size))
-        self.save(url, part)
+        size = response.json()['data']['durl'][0]['size'] / 1024 / 1024
+        self.save(url, part, size)
 
     # 保存视频
-    def save(self, url, part):
+    def save(self, url, part, size):
         h = re.findall("http://(.*?)/", url)
         host = h[0]
         headers = {
@@ -73,7 +72,8 @@ class Bili_spider():
         
         response = requests.get(url, headers=headers)
  
-        if response.status_code < 300:
+        if response.status_code < 300  and not os.path.exists(f"{part}.flv"):
+            print('%s正在下载视频，大小为：% .2fM' % (part, size))
             with open(f'{part}.flv', 'wb') as fi:
                 fi.write(response.content)
             print(f"{part}保存完成")
